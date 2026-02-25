@@ -23,6 +23,18 @@ services:
       auth:
         condition: service_started
 
+  stock:
+    build: services/stock
+    ports:
+      - "8080:8080"
+    networks:
+      - devsprint-network
+    environment:
+      - SQLALCHEMY_DATABASE_URI=postgresql://devsprint:devsprint@stock-db:5432/stock
+    depends_on:
+      stock-db:
+        condition: service_healthy
+
   auth:
     image: registry.supertokens.io/supertokens/supertokens-postgresql
     ports:
@@ -45,6 +57,23 @@ services:
       - POSTGRES_DB=devsprint
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devsprint -d devsprint"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - devsprint-network
+
+  stock-db:
+    image: postgres:18-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=devsprint
+      - POSTGRES_PASSWORD=devsprint
+      - POSTGRES_DB=stock
+    ports:
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U devsprint -d devsprint"]
       interval: 10s

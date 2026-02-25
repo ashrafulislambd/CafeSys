@@ -47,6 +47,10 @@ CORS(
 def catch_all(u_path: str):
     abort(404)
 
+@app.post('/order')
+def make_order():
+    pass
+
 if __name__ == '__main__':
     r = redis.Redis(host="redis-cache", port=6379, decode_responses=True)
     print("Redis Info: ", r.info())
