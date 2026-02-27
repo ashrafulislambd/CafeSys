@@ -11,14 +11,33 @@ services:
       timeout: 5s
       retries: 5
 
+  queue:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - devsprint-network
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmqctl status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   order:
     build: services/order
     ports:
       - "8000:8000"
     networks:
       - devsprint-network
+    environment:
+      - STOCK_SERVICE_URL=http://stock:8080
+      - RABBITMQ_HOST=queue
+      - RABBITMQ_PORT=5672
     depends_on:
       redis-cache:
+        condition: service_healthy
+      queue:
         condition: service_healthy
       auth:
         condition: service_started
@@ -34,6 +53,21 @@ services:
     depends_on:
       stock-db:
         condition: service_healthy
+      queue:
+        condition: service_healthy
+
+  kitchen:
+    build: services/kitchen
+    ports:
+      - "8001:8001"
+    networks:
+      - devsprint-network
+    environment:
+      - RABBITMQ_HOST=queue
+      - RABBITMQ_PORT=5672
+    depends_on:
+      queue:
+        condition: service_healthy
 
   auth:
     image: registry.supertokens.io/supertokens/supertokens-postgresql
@@ -46,6 +80,20 @@ services:
       - devsprint-network
     depends_on:
       auth-db:
+        condition: service_healthy
+
+  notification:
+    build: services/notification
+    ports:
+      - "8765:8765"
+    networks:
+      - devsprint-network
+    environment:
+      - RABBITMQ_HOST=queue
+      - RABBITMQ_PORT=5672
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      queue:
         condition: service_healthy
 
   auth-db:
