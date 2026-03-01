@@ -54,12 +54,10 @@ def callback(ch, method, properties, body):
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
 def start_consumer():
-    """Consumer thread uses its own connection and channel."""
     conn = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT))
     channel = conn.channel()
     channel.queue_declare(queue='status_queue', durable=True)
     channel.basic_consume(queue='status_queue', on_message_callback=callback)
-    print("RabbitMQ consumer waiting for status updates...")
     try:
         channel.start_consuming()
     except Exception as e:
