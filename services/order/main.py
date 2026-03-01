@@ -2,7 +2,7 @@ import redis, requests, os
 from flask import Flask, abort, g, request
 from flask_cors import CORS
 from supertokens_python.framework.flask import Middleware
-from supertokens_python import init, InputAppInfo, SupertokensConfig
+from supertokens_python import init, InputAppInfo, SupertokensConfig, get_all_cors_headers
 from supertokens_python.recipe import emailpassword, session, dashboard
 
 from supertokens_python.recipe.session import SessionContainer
@@ -11,6 +11,7 @@ from supertokens_python.recipe.session.framework.flask import verify_session
 r = redis.Redis(host="redis-cache", port=6379, decode_responses=True)
 
 STOCK_SERVICE_URL = os.getenv("STOCK_SERVICE_URL", "http://stock:8080")
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", 'http://localhost:5173')
 
 init(
     app_info=InputAppInfo(
@@ -38,10 +39,10 @@ init(
 app = Flask(__name__)
 CORS(
     app,
-    origins="*",
-    allow_headers=["Content-Type", "Authorization"],
+    origins=[FRONTEND_ORIGIN],
+    allow_headers=["Content-Type", "Authorization"] + get_all_cors_headers(),
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    supports_credentials=False,
+    supports_credentials=True,
 )
 Middleware(app)
 

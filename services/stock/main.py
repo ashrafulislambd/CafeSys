@@ -1,17 +1,24 @@
 from flask import Flask, request, make_response
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 from sqlalchemy import func
 import redis, pika, threading, json, os
 
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "queue")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+CORS(
+    app,
+    origins=[FRONTEND_ORIGIN],
+    supports_credentials=True
+)
 db = SQLAlchemy(app)
 r = redis.Redis(host="redis-cache", port=6379, decode_responses=True)
 
-
+"""
 @app.before_request
 def handle_preflight():
     if request.method == "OPTIONS":
@@ -29,7 +36,7 @@ def add_cors_headers(response):
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "*"
     return response
-
+"""
 
 class ConfigInt(db.Model):
     key = db.Column(db.String(100), primary_key=True)
