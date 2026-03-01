@@ -2,8 +2,6 @@ import redis, requests, os
 from flask import Flask, abort, g, request
 from flask_cors import CORS
 from supertokens_python.framework.flask import Middleware
-from supertokens_python import get_all_cors_headers
-
 from supertokens_python import init, InputAppInfo, SupertokensConfig
 from supertokens_python.recipe import emailpassword, session, dashboard
 
@@ -38,20 +36,20 @@ init(
 )
 
 app = Flask(__name__)
+CORS(
+    app,
+    origins="*",
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    supports_credentials=False,
+)
 Middleware(app)
 
-CORS(
-    app=app,
-    origins=[
-        "http://localhost:8000"
-    ],
-    supports_credentials=True,
-    allow_headers=["Content-Type"] + get_all_cors_headers()
-)
-
-@app.route('/', defaults={'u_path': ''})  
-@app.route('/<path:u_path>')  
+@app.route('/', defaults={'u_path': ''})
+@app.route('/<path:u_path>', methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"])
 def catch_all(u_path: str):
+    if request.method == "OPTIONS":
+        return "", 200
     abort(404)
 
 @app.post('/order')

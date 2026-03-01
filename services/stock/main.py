@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 import redis, pika, threading, json, os
@@ -10,6 +10,26 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 db = SQLAlchemy(app)
 r = redis.Redis(host="redis-cache", port=6379, decode_responses=True)
+
+
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        resp = make_response("", 204)
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = "*"
+        resp.headers["Access-Control-Max-Age"] = "0"
+        return resp
+
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
+
 
 class ConfigInt(db.Model):
     key = db.Column(db.String(100), primary_key=True)
