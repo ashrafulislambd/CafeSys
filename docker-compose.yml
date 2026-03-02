@@ -19,7 +19,7 @@ services:
     networks:
       - devsprint-network
     volumes:
-      - devsprint-volume-rabbitmq
+      - devsprint-volume-rabbitmq:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD-SHELL", "rabbitmqctl status"]
       interval: 10s
