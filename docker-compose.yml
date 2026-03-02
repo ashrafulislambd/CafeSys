@@ -18,6 +18,8 @@ services:
       - "15672:15672"
     networks:
       - devsprint-network
+    volumes:
+      - devsprint-volume-rabbitmq
     healthcheck:
       test: ["CMD-SHELL", "rabbitmqctl status"]
       interval: 10s
@@ -142,3 +144,5 @@ services:
 
 networks:
   devsprint-network:
+volumes:
+  devsprint-volume-rabbitmq:
