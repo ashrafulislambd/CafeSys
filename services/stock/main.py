@@ -6,7 +6,7 @@ import redis, pika, threading, json, os
 
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "queue")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
-FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:80")
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')

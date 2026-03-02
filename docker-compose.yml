@@ -38,7 +38,7 @@ services:
       - STOCK_SERVICE_URL=http://stock:8080
       - RABBITMQ_HOST=queue
       - RABBITMQ_PORT=5672
-      - FRONTEND_ORIGIN=http://localhost:5173
+      - FRONTEND_ORIGIN=http://localhost:80
     depends_on:
       redis-cache:
         condition: service_healthy
@@ -57,7 +57,7 @@ services:
       - devsprint-network
     environment:
       - SQLALCHEMY_DATABASE_URI=postgresql://devsprint:devsprint@stock-db:5432/stock
-      - FRONTEND_ORIGIN=http://localhost:5173
+      - FRONTEND_ORIGIN=http://localhost:80
     depends_on:
       stock-db:
         condition: service_healthy
@@ -107,6 +107,13 @@ services:
     depends_on:
       queue:
         condition: service_healthy
+
+  frontend:
+    build: services/frontend
+    ports:
+      - "80:5173"
+    networks:
+      - devsprint-network
 
   auth-db:
     image: postgres:18-alpine

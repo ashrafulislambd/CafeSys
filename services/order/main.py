@@ -11,13 +11,15 @@ from supertokens_python.recipe.session.framework.flask import verify_session
 r = redis.Redis(host="redis-cache", port=6379, decode_responses=True)
 
 STOCK_SERVICE_URL = os.getenv("STOCK_SERVICE_URL", "http://stock:8080")
-FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", 'http://localhost:5173')
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", 'http://localhost:80')
+API_DOMAIN = os.getenv("API_DOMAIN", "http://localhost:8000")
+WEBSITE_DOMAIN = os.getenv("WEBSITE_DOMAIN", "http://localhost:80")
 
 init(
     app_info=InputAppInfo(
         app_name="Order Microservice",
-        api_domain="http://localhost:8000",
-        website_domain="http://localhost:8000",
+        api_domain=API_DOMAIN,
+        website_domain=WEBSITE_DOMAIN,
         api_base_path="/auth",
         website_base_path="/auth"
     ),
