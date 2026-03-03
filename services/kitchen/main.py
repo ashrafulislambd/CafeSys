@@ -1,4 +1,5 @@
-import pika, os, random, time, json
+import pika, os, random, time, json, threading
+from flask import Flask
 
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "queue")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
@@ -46,8 +47,20 @@ def process_order(ch, method, properties, body):
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
+# ── Lightweight health-check HTTP server ────────────────────────────────────
+health_app = Flask(__name__)
+
+@health_app.get('/health')
+def health():
+    return {"status": "ok"}
+
+def run_health_server():
+    health_app.run(host="0.0.0.0", port=8001)
+
+threading.Thread(target=run_health_server, daemon=True).start()
+# ────────────────────────────────────────────────────────────────────────────
+
 rabbitmq_channel.basic_qos(prefetch_count=5)
 rabbitmq_channel.basic_consume(queue='order_queue', on_message_callback=process_order)
 print("Waiting for orders...")
 rabbitmq_channel.start_consuming()
-

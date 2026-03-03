@@ -1,5 +1,7 @@
 import websockets
 import asyncio
+import aiohttp
+from aiohttp import web
 import pika
 import os
 import json
@@ -56,11 +58,32 @@ async def serve(websocket):
         connected.pop(user_id, None)
 
 
+# ── Lightweight health-check HTTP server (aiohttp) ──────────────────────────
+async def handle_health(request):
+    return web.Response(
+        text=json.dumps({"status": "ok"}),
+        content_type="application/json"
+    )
+
+async def start_health_server():
+    health_app = web.Application()
+    health_app.router.add_get('/health', handle_health)
+    runner = web.AppRunner(health_app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8766)
+    await site.start()
+    print("Health server started on http://0.0.0.0:8766")
+# ────────────────────────────────────────────────────────────────────────────
+
+
 async def main():
     loop = asyncio.get_running_loop()
 
     # Run RabbitMQ consumer in a separate thread, but don't await it
     asyncio.create_task(asyncio.to_thread(prepare_rabbitmq_consumer, loop))
+
+    # Start health HTTP server
+    await start_health_server()
 
     # Start WebSocket server immediately
     async with websockets.serve(serve, "0.0.0.0", 8765):

@@ -94,6 +94,10 @@ def start_consumer():
 def hello():
     return "I am running"
 
+@app.get('/health')
+def health():
+    return {"status": "ok"}
+
 @app.get('/status')
 def get_status():
     stock = ConfigInt.query.get("stock")

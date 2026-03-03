@@ -51,6 +51,8 @@ Middleware(app)
 @app.route('/', defaults={'u_path': ''})
 @app.route('/<path:u_path>', methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"])
 def catch_all(u_path: str):
+    if u_path == 'health':
+        return {"status": "ok"}
     if request.method == "OPTIONS":
         return "", 200
     abort(404)

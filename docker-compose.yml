@@ -108,6 +108,26 @@ services:
       queue:
         condition: service_healthy
 
+  dashboard:
+    build: services/dashboard
+    ports:
+      - "9000:9000"
+    networks:
+      - devsprint-network
+    environment:
+      - ORDER_URL=http://order:8000
+      - STOCK_URL=http://stock:8080
+      - KITCHEN_URL=http://kitchen:8001
+      - NOTIFICATION_URL=http://notification:8766
+      - COMPOSE_PROJECT=${COMPOSE_PROJECT_NAME:-devsprint}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - order
+      - stock
+      - kitchen
+      - notification
+
   frontend:
     build: services/frontend
     ports:

@@ -4,4 +4,4 @@ COPY requirements.txt /app/
 RUN apk add --no-cache gcc musl-dev libffi-dev && \
     pip install --no-cache-dir -r requirements.txt
 COPY . /app/
-CMD ["python", "main.py"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"]

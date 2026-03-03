@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CafeSys · Ops Health Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg:        #0a0d14;
+    --surface:   #111620;
+    --glass:     rgba(255,255,255,0.04);
+    --border:    rgba(255,255,255,0.08);
+    --up:        #22c55e;
+    --up-glow:   rgba(34,197,94,0.35);
+    --down:      #ef4444;
+    --down-glow: rgba(239,68,68,0.35);
+    --deg:       #f59e0b;
+    --deg-glow:  rgba(245,158,11,0.35);
+    --unk:       #6b7280;
+    --accent:    #6366f1;
+    --accent2:   #8b5cf6;
+    --text:      #e2e8f0;
+    --muted:     #64748b;
+    --mono:      'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background gradient orbs ── */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::before {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+    top: -200px; left: -150px;
+  }
+  body::after {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%);
+    bottom: -150px; right: -100px;
+  }
+
+  /* ── Layout ── */
+  .wrapper { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo { display: flex; align-items: center; gap: .75rem; }
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+  }
+  h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; }
+  h1 span { color: var(--accent); }
+  .subtitle { font-size: .8rem; color: var(--muted); margin-top: .15rem; }
+
+  .ws-badge {
+    display: flex; align-items: center; gap: .5rem;
+    font-size: .75rem; color: var(--muted);
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .4rem .8rem;
+  }
+  .ws-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--unk);
+    transition: background .3s, box-shadow .3s;
+  }
+  .ws-dot.connected  { background: var(--up);   box-shadow: 0 0 8px var(--up-glow); }
+  .ws-dot.connecting { background: var(--deg); }
+
+  /* ── Section headings ── */
+  .section-header { display: flex; align-items: center; gap: .6rem; margin-bottom: 1.25rem; }
+  .section-header h2 { font-size: 1rem; font-weight: 600; }
+  .section-header .pill {
+    font-size: .65rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    padding: .2rem .6rem; border-radius: 999px;
+    background: var(--glass); border: 1px solid var(--border); color: var(--muted);
+  }
+
+  /* ── Health grid ── */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s, border-color .3s, box-shadow .4s;
+  }
+  .card:hover { transform: translateY(-3px); }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0; border-radius: inherit;
+    opacity: 0;
+    transition: opacity .4s;
+    pointer-events: none;
+  }
+  .card.up::before    { background: radial-gradient(circle at 50% 0%, var(--up-glow), transparent 70%); }
+  .card.down::before  { background: radial-gradient(circle at 50% 0%, var(--down-glow), transparent 70%); }
+  .card.degraded::before { background: radial-gradient(circle at 50% 0%, var(--deg-glow), transparent 70%); }
+  .card.up::before, .card.down::before, .card.degraded::before { opacity: 1; }
+
+  .card.up    { border-color: rgba(34,197,94,0.3);  box-shadow: 0 0 30px -10px var(--up-glow);   }
+  .card.down  { border-color: rgba(239,68,68,0.3);  box-shadow: 0 0 30px -10px var(--down-glow); }
+  .card.degraded { border-color: rgba(245,158,11,0.3); box-shadow: 0 0 30px -10px var(--deg-glow); }
+
+  .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+  .service-name { font-size: 1rem; font-weight: 600; text-transform: capitalize; }
+  .service-port { font-size: .7rem; color: var(--muted); font-family: var(--mono); margin-top: .1rem; }
+
+  .led-wrap { position: relative; }
+  .led {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--unk);
+    transition: background .3s, box-shadow .3s;
+    position: relative;
+  }
+  .led::after {
+    content: '';
+    position: absolute;
+    inset: -4px; border-radius: 50%;
+    opacity: .4; transition: opacity .3s, background .3s;
+  }
+  .led.up    { background: var(--up);  box-shadow: 0 0 12px var(--up-glow);   }
+  .led.down  { background: var(--down); box-shadow: 0 0 12px var(--down-glow); animation: pulse-red 1.5s infinite; }
+  .led.degraded { background: var(--deg); box-shadow: 0 0 12px var(--deg-glow); }
+
+  @keyframes pulse-red {
+    0%, 100% { box-shadow: 0 0 12px var(--down-glow); }
+    50%       { box-shadow: 0 0 24px var(--down-glow); }
+  }
+
+  .status-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .status-badge {
+    font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    padding: .25rem .7rem; border-radius: 999px;
+  }
+  .status-badge.up      { background: rgba(34,197,94,0.15);  color: var(--up);  }
+  .status-badge.down    { background: rgba(239,68,68,0.15);  color: var(--down); }
+  .status-badge.degraded { background: rgba(245,158,11,0.15); color: var(--deg); }
+  .status-badge.unknown { background: rgba(107,114,128,0.15); color: var(--unk); }
+
+  .latency {
+    font-size: .8rem; font-family: var(--mono); color: var(--muted);
+  }
+  .latency span { color: var(--text); font-weight: 500; }
+
+  /* mini sparkline */
+  .sparkline { width: 100%; height: 40px; margin-bottom: 1rem; }
+
+  /* chaos button */
+  .btn-chaos {
+    width: 100%; padding: .55rem 1rem;
+    border: 1px solid var(--border); border-radius: 8px;
+    font-family: 'Inter', sans-serif; font-size: .8rem; font-weight: 600;
+    cursor: pointer; transition: all .2s; letter-spacing: .02em;
+    background: var(--glass); color: var(--text);
+  }
+  .btn-chaos:hover { background: rgba(255,255,255,0.08); }
+  .btn-chaos.kill {
+    border-color: rgba(239,68,68,0.5); color: var(--down);
+    background: rgba(239,68,68,0.08);
+  }
+  .btn-chaos.kill:hover { background: rgba(239,68,68,0.18); }
+  .btn-chaos.restore {
+    border-color: rgba(34,197,94,0.5); color: var(--up);
+    background: rgba(34,197,94,0.08);
+  }
+  .btn-chaos.restore:hover { background: rgba(34,197,94,0.18); }
+
+  /* ── Metrics row ── */
+  .metrics-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2.5rem; }
+  @media (max-width: 640px) { .metrics-row { grid-template-columns: 1fr; } }
+
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+  }
+  .metric-title { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; margin-bottom: 1.25rem; }
+
+  /* latency chart */
+  #latencyChart { width: 100%; height: 120px; display: block; }
+
+  /* throughput display */
+  .throughput-big {
+    font-size: 3rem; font-weight: 700; font-family: var(--mono);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1;
+    margin: .5rem 0;
+  }
+  .throughput-label { font-size: .8rem; color: var(--muted); }
+  .throughput-updated { font-size: .7rem; color: var(--muted); margin-top: .75rem; font-family: var(--mono); }
+
+  /* ── Event log ── */
+  .log-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+  }
+  .log-list { list-style: none; display: flex; flex-direction: column; gap: .5rem; max-height: 200px; overflow-y: auto; }
+  .log-list::-webkit-scrollbar { width: 4px; }
+  .log-list::-webkit-scrollbar-track { background: transparent; }
+  .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-entry { display: flex; gap: .75rem; font-size: .75rem; font-family: var(--mono); }
+  .log-time { color: var(--muted); flex-shrink: 0; }
+  .log-msg.chaos { color: var(--down); }
+  .log-msg.restore { color: var(--up); }
+  .log-msg.status { color: var(--muted); }
+  .log-msg.info { color: var(--accent); }
+
+  /* fade-in animation */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .card { animation: fadeIn .4s ease both; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">☕</div>
+      <div>
+        <h1>Cafe<span>Sys</span> Ops</h1>
+        <div class="subtitle">System Health Dashboard · Live</div>
+      </div>
+    </div>
+    <div class="ws-badge">
+      <div class="ws-dot connecting" id="wsDot"></div>
+      <span id="wsLabel">Connecting…</span>
+    </div>
+  </header>
+
+  <!-- Health Grid -->
+  <div class="section-header">
+    <h2>Health Grid</h2>
+    <span class="pill" id="upCount">— / 4 up</span>
+  </div>
+  <div class="grid" id="healthGrid"></div>
+
+  <!-- Live Metrics -->
+  <div class="section-header">
+    <h2>Live Metrics</h2>
+    <span class="pill">2 s refresh</span>
+  </div>
+  <div class="metrics-row">
+    <div class="metric-card">
+      <div class="metric-title">Average Latency · All Services (ms)</div>
+      <canvas id="latencyChart"></canvas>
+    </div>
+    <div class="metric-card">
+      <div class="metric-title">Stock Level</div>
+      <div class="throughput-big" id="throughputVal">—</div>
+      <div class="throughput-label">Units in stock</div>
+      <div class="throughput-updated" id="throughputTime"></div>
+    </div>
+  </div>
+
+  <!-- Event Log -->
+  <div class="section-header"><h2>Event Log</h2></div>
+  <div class="log-card">
+    <ul class="log-list" id="logList"></ul>
+  </div>
+
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const SERVICE_PORTS = { order: 8000, stock: 8080, kitchen: 8002, notification: 8766 };
+const HISTORY_POINTS = 30;
+const WS_URL = (() => {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  return `${proto}://${location.hostname}:${location.port || 9000}/ws`;
+})();
+
+// ── State ────────────────────────────────────────────────────────────────────
+let latencyHistory = []; // rolling avg per tick
+let lastSnapshot = {};
+let ws;
+
+// ── DOM helpers ──────────────────────────────────────────────────────────────
+const grid       = document.getElementById('healthGrid');
+const upCount    = document.getElementById('upCount');
+const tVal       = document.getElementById('throughputVal');
+const tTime      = document.getElementById('throughputTime');
+const logList    = document.getElementById('logList');
+const wsDot      = document.getElementById('wsDot');
+const wsLabel    = document.getElementById('wsLabel');
+
+// ── Log ──────────────────────────────────────────────────────────────────────
+function addLog(msg, type = 'status') {
+  const now = new Date().toLocaleTimeString('en-US', { hour12: false });
+  const li  = document.createElement('li');
+  li.className = 'log-entry';
+  li.innerHTML = `<span class="log-time">${now}</span><span class="log-msg ${type}">${msg}</span>`;
+  logList.prepend(li);
+  if (logList.children.length > 50) logList.lastElementChild.remove();
+}
+
+// ── Card builder ─────────────────────────────────────────────────────────────
+function buildCard(name) {
+  const port = SERVICE_PORTS[name] ?? '?';
+  const div  = document.createElement('div');
+  div.className = 'card';
+  div.id = `card-${name}`;
+  div.style.animationDelay = `${Object.keys(SERVICE_PORTS).indexOf(name) * 80}ms`;
+  div.innerHTML = `
+    <div class="card-top">
+      <div>
+        <div class="service-name">${name}</div>
+        <div class="service-port">:${port}</div>
+      </div>
+      <div class="led-wrap"><div class="led" id="led-${name}"></div></div>
+    </div>
+    <div class="status-row">
+      <span class="status-badge unknown" id="badge-${name}">UNKNOWN</span>
+      <span class="latency" id="lat-${name}">— ms</span>
+    </div>
+    <canvas class="sparkline" id="spark-${name}" width="300" height="40"></canvas>
+    <button class="btn-chaos" id="btn-${name}" onclick="toggleChaos('${name}')">💀 Kill Service</button>
+  `;
+  grid.appendChild(div);
+}
+
+Object.keys(SERVICE_PORTS).forEach(buildCard);
+addLog('Dashboard initialised', 'info');
+
+// ── Sparkline ────────────────────────────────────────────────────────────────
+function drawSparkline(name, history) {
+  const canvas = document.getElementById(`spark-${name}`);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 260;
+  const H = 40;
+  canvas.width = W;
+  canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  const pts = history.slice(-HISTORY_POINTS);
+  const valid = pts.filter(v => v !== null);
+  if (valid.length < 2) return;
+
+  const max = Math.max(...valid, 1);
+  const step = W / (pts.length - 1);
+
+  // Build path (skip nulls)
+  const segments = [];
+  let current = [];
+  pts.forEach((v, i) => {
+    if (v !== null) { current.push({ x: i * step, y: H - (v / max) * (H - 4) - 2 }); }
+    else            { if (current.length) segments.push(current); current = []; }
+  });
+  if (current.length) segments.push(current);
+
+  // gradient stroke
+  const grad = ctx.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, 'rgba(99,102,241,0.4)');
+  grad.addColorStop(1, 'rgba(139,92,246,1)');
+
+  segments.forEach(seg => {
+    if (seg.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(seg[0].x, seg[0].y);
+    seg.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.strokeStyle = grad;
+    ctx.lineWidth   = 2;
+    ctx.lineJoin    = 'round';
+    ctx.stroke();
+
+    // fill
+    const fillGrad = ctx.createLinearGradient(0, 0, 0, H);
+    fillGrad.addColorStop(0, 'rgba(99,102,241,0.2)');
+    fillGrad.addColorStop(1, 'rgba(99,102,241,0)');
+    ctx.beginPath();
+    ctx.moveTo(seg[0].x, H);
+    seg.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.lineTo(seg.at(-1).x, H);
+    ctx.closePath();
+    ctx.fillStyle = fillGrad;
+    ctx.fill();
+  });
+}
+
+// ── Latency chart ─────────────────────────────────────────────────────────────
+const latCanvas = document.getElementById('latencyChart');
+const latCtx    = latCanvas.getContext('2d');
+
+function drawLatencyChart() {
+  const W = latCanvas.offsetWidth || 400;
+  const H = 120;
+  latCanvas.width  = W;
+  latCanvas.height = H;
+  latCtx.clearRect(0, 0, W, H);
+
+  const pts = latencyHistory.slice(-HISTORY_POINTS);
+  if (pts.length < 2) return;
+
+  const valid = pts.filter(v => v !== null);
+  const max   = Math.max(...valid, 1);
+  const step  = W / (pts.length - 1);
+
+  // grid lines
+  latCtx.strokeStyle = 'rgba(255,255,255,0.04)';
+  latCtx.lineWidth   = 1;
+  [0.25, 0.5, 0.75, 1].forEach(r => {
+    const y = H - r * H;
+    latCtx.beginPath(); latCtx.moveTo(0, y); latCtx.lineTo(W, y); latCtx.stroke();
+    latCtx.fillStyle = 'rgba(100,116,139,0.6)';
+    latCtx.font = '10px JetBrains Mono, monospace';
+    latCtx.fillText(`${Math.round(r * max)} ms`, 4, y - 3);
+  });
+
+  // path
+  const segments = [];
+  let current = [];
+  pts.forEach((v, i) => {
+    if (v !== null) current.push({ x: i * step, y: H - (v / max) * (H - 14) - 2 });
+    else           { if (current.length) segments.push(current); current = []; }
+  });
+  if (current.length) segments.push(current);
+
+  const grad = latCtx.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, '#6366f1');
+  grad.addColorStop(1, '#8b5cf6');
+
+  segments.forEach(seg => {
+    if (seg.length < 2) return;
+    latCtx.beginPath();
+    latCtx.moveTo(seg[0].x, seg[0].y);
+    seg.slice(1).forEach(p => latCtx.lineTo(p.x, p.y));
+    latCtx.strokeStyle = grad;
+    latCtx.lineWidth   = 2.5;
+    latCtx.lineJoin    = 'round';
+    latCtx.stroke();
+
+    const fill = latCtx.createLinearGradient(0, 0, 0, H);
+    fill.addColorStop(0, 'rgba(99,102,241,0.25)');
+    fill.addColorStop(1, 'rgba(99,102,241,0)');
+    latCtx.beginPath();
+    latCtx.moveTo(seg[0].x, H);
+    seg.forEach(p => latCtx.lineTo(p.x, p.y));
+    latCtx.lineTo(seg.at(-1).x, H);
+    latCtx.closePath();
+    latCtx.fillStyle = fill;
+    latCtx.fill();
+  });
+}
+
+// ── Render snapshot ──────────────────────────────────────────────────────────
+function renderSnapshot(data) {
+  const services  = data.services || {};
+  const tp        = data.throughput || {};
+  let upN = 0;
+
+  const latencies = [];
+
+  for (const [name, info] of Object.entries(services)) {
+    const card  = document.getElementById(`card-${name}`);
+    const led   = document.getElementById(`led-${name}`);
+    const badge = document.getElementById(`badge-${name}`);
+    const lat   = document.getElementById(`lat-${name}`);
+    const btn   = document.getElementById(`btn-${name}`);
+    if (!card) continue;
+
+    const st = info.status || 'UNKNOWN';
+    const cls = st.toLowerCase();
+
+    card.className  = `card ${cls}`;
+    led.className   = `led ${cls}`;
+    badge.className = `status-badge ${cls}`;
+    badge.textContent = st;
+
+    if (info.latency_ms !== null && info.latency_ms !== undefined) {
+      lat.innerHTML = `<span>${info.latency_ms}</span> ms`;
+      latencies.push(info.latency_ms);
+    } else {
+      lat.innerHTML = '— ms';
+    }
+
+    if (info.killed) {
+      btn.className   = 'btn-chaos restore';
+      btn.textContent = '✅ Restore Service';
+    } else {
+      btn.className   = 'btn-chaos kill';
+      btn.textContent = '💀 Kill Service';
+    }
+
+    drawSparkline(name, info.latency_history || []);
+
+    // detect state changes for log
+    const prev = (lastSnapshot[name] || {}).status;
+    if (prev && prev !== st) {
+      const type = st === 'UP' ? 'restore' : (st === 'DOWN' ? 'chaos' : 'status');
+      addLog(`[${name}] ${prev} → ${st}`, type);
+    }
+
+    if (st === 'UP') upN++;
+  }
+
+  upCount.textContent = `${upN} / ${Object.keys(services).length} up`;
+
+  // avg latency for chart
+  const avg = latencies.length ? Math.round(latencies.reduce((a,b)=>a+b,0)/latencies.length) : null;
+  latencyHistory.push(avg);
+  if (latencyHistory.length > HISTORY_POINTS * 2) latencyHistory.shift();
+  drawLatencyChart();
+
+  // throughput
+  if (tp.total_orders !== undefined) {
+    tVal.textContent = tp.total_orders;
+    tTime.textContent = tp.last_updated ? `Last updated: ${tp.last_updated}` : '';
+  }
+
+  lastSnapshot = JSON.parse(JSON.stringify(services));
+}
+
+// ── Chaos toggle ─────────────────────────────────────────────────────────────
+async function toggleChaos(name) {
+  const info = lastSnapshot[name];
+  if (!info) return;
+  const endpoint = info.killed
+    ? `/api/chaos/${name}/restore`
+    : `/api/chaos/${name}`;
+  try {
+    const res = await fetch(endpoint, { method: 'POST' });
+    const data = await res.json();
+    addLog(data.killed ? `[chaos] Killed ${name}` : `[restore] Restored ${name}`,
+           data.killed ? 'chaos' : 'restore');
+  } catch(e) {
+    addLog(`Failed to toggle chaos for ${name}: ${e.message}`, 'chaos');
+  }
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+function connect() {
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    wsDot.className = 'ws-dot connected';
+    wsLabel.textContent = 'Live';
+    addLog('WebSocket connected', 'info');
+  };
+
+  ws.onmessage = (evt) => {
+    try { renderSnapshot(JSON.parse(evt.data)); } catch(_) {}
+  };
+
+  ws.onclose = () => {
+    wsDot.className = 'ws-dot connecting';
+    wsLabel.textContent = 'Reconnecting…';
+    addLog('WebSocket disconnected — reconnecting in 3 s', 'status');
+    setTimeout(connect, 3000);
+  };
+
+  ws.onerror = () => {
+    wsDot.className = 'ws-dot';
+    wsLabel.textContent = 'Error';
+  };
+}
+
+// ── Kick off ──────────────────────────────────────────────────────────────────
+// First load: fetch current snapshot via REST (instant data before WS connects)
+fetch('/api/status').then(r => r.json()).then(renderSnapshot).catch(() => {});
+connect();
+
+// Redraw charts on resize
+window.addEventListener('resize', () => { drawLatencyChart(); });
+</script>
+</body>
+</html>
