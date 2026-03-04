@@ -1,5 +1,8 @@
-import { Outlet, Link, useNavigate } from "react-router-dom";
+import { Outlet, Link, NavLink, useNavigate } from "react-router-dom";
 import Session from "supertokens-auth-react/recipe/session";
+
+const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
+  `app-link ${isActive ? "active" : ""}`;
 
 function Header() {
   const navigate = useNavigate();
@@ -26,15 +29,15 @@ function Header() {
           IUT Cafeteria
         </Link>
         <nav className="app-nav">
-          <Link to="/" className="app-link">
+          <NavLink to="/" end className={navLinkClassName}>
             Home
-          </Link>
-          <Link to="/order" className="app-link">
+          </NavLink>
+          <NavLink to="/order" className={navLinkClassName}>
             Order
-          </Link>
-          <Link to="/admin" className="app-link">
+          </NavLink>
+          <NavLink to="/admin" className={navLinkClassName}>
             Admin
-          </Link>
+          </NavLink>
           {!isLoading &&
             (hasSession ? (
               <button
