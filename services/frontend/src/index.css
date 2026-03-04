@@ -1,16 +1,164 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", sans-serif;
 }
 
 body {
-  @apply min-h-screen bg-slate-50 text-slate-800 antialiased;
+  @apply min-h-screen antialiased;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Roboto",
+    "Oxygen",
+    "Ubuntu",
+    sans-serif;
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(99, 102, 241, 0.15),
+      transparent 40%
+    ),
+    radial-gradient(circle at 80% 0%, rgba(16, 185, 129, 0.1), transparent 30%),
+    linear-gradient(135deg, #0b1120 0%, #111827 45%, #0f172a 100%);
+  background-attachment: fixed;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.app-shell {
+  @apply min-h-screen;
+}
+
+.app-header {
+  @apply sticky top-0 z-50;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+}
+
+.app-header-inner {
+  @apply mx-auto flex items-center justify-between px-4 py-3;
+  max-width: 1100px;
+}
+
+.app-brand {
+  @apply font-bold tracking-tight transition-colors;
+  color: #f8fafc;
+}
+
+.app-brand:hover {
+  color: #3aafa9;
+}
+
+.app-nav {
+  @apply flex items-center gap-4;
+}
+
+.app-link {
+  @apply text-sm transition-colors;
+  color: #cbd5e1;
+}
+
+.app-link:hover {
+  color: #ffffff;
+}
+
+.app-link-accent {
+  @apply text-sm font-semibold transition-colors;
+  color: #3aafa9;
+}
+
+.app-link-accent:hover {
+  color: #2d8a84;
+}
+
+.app-main {
+  @apply mx-auto px-4 py-8;
+  max-width: 1100px;
+}
+
+.app-card {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 24px 45px -28px rgba(0, 0, 0, 0.9);
+}
+
+.app-input {
+  @apply rounded-lg border px-3 py-2 transition;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(15, 23, 42, 0.6);
+  color: #f8fafc;
+}
+
+.app-input::placeholder {
+  color: #64748b;
+}
+
+.app-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22);
+  outline: none;
+}
+
+.app-btn-primary {
+  @apply rounded-lg px-5 py-2 font-semibold text-sm transition;
+  background: linear-gradient(120deg, #3aafa9 0%, #2d8a84 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(58, 175, 169, 0.3);
+}
+
+.app-btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.app-btn-neutral {
+  @apply rounded-lg border px-5 py-2 text-sm font-medium transition;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+}
+
+.app-btn-neutral:hover {
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.app-muted {
+  color: #94a3b8;
+}
+
+.app-status-live {
+  color: #34d399;
+}
+
+.app-status-offline {
+  color: #94a3b8;
+}
+
+.app-list-row {
+  @apply flex items-center justify-between rounded-lg border px-3 py-2 text-sm;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 /* Focus ring for accessibility */
 input:focus-visible,
 button:focus-visible,
 a:focus-visible {
-  @apply outline-none ring-2 ring-slate-400 ring-offset-2 ring-offset-slate-50;
+  @apply outline-none ring-2 ring-indigo-400/70 ring-offset-2;
+  --tw-ring-offset-color: #0f172a;
 }
