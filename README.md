@@ -17,6 +17,11 @@ It includes a React frontend, Python backend services, Redis and PostgreSQL data
 - **Databases:** PostgreSQL (auth + stock)
 - **Container orchestration:** Docker Compose
 
+## AI Usage
+
+- **Frontend development:** Sonnet 4.6, GPT-3.5, GPT-5.3-Codex
+- **Documentation:** GPT-5.1
+
 ## Repository Structure
 
 ```text
